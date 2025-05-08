@@ -1,0 +1,33 @@
+services:
+  habicode.api:
+    image: ${DOCKER_REGISTRY-}habicodeapi
+    build:
+      context: .
+      dockerfile: src/HabiCode.Api/Dockerfile
+    ports:
+      - 5000:8080
+      - 5001:8081
+    environment:
+      # seq
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.seq:5341/ingest/otlp
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      # Aspire dashboard
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grcp 
+
+  habicode.seq:
+    image: datalust/seq:2024.3
+    environment:
+      ACCEPT_EULA: "Y"
+    volumes:
+      - ./.containers/seq_data:/data
+    ports:
+      - 8080:80
+      - 5341:5341 
+
+  habicode.aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+    environment:
+      DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+    ports:
+      - 18888:18888
