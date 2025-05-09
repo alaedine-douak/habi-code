@@ -1,4 +1,6 @@
 ﻿using System.Linq.Expressions;
+using FluentValidation;
+using FluentValidation.Results;
 using HabiCode.Api.Database;
 using HabiCode.Api.DTOs.Habits;
 using HabiCode.Api.Entities;
@@ -46,8 +48,18 @@ public sealed class HabitsController(HabiCodeDbContext dbContext) : ControllerBa
     }
 
     [HttpPost]
-    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto)
+    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto, IValidator<CreateHabitDto> validator)
     {
+        //1. before we added ValidationExceptionHandler Middleware
+        //ValidationResult validationResult = await validator.ValidateAsync(createHabitDto);
+        //if (!validationResult.IsValid)
+        //{ 
+        //    return BadRequest(validationResult.ToDictionary());
+        //}
+
+        //2. After we add ValidationExceptionHandler Middleware
+        await validator.ValidateAndThrowAsync(createHabitDto);
+
         Habit habit = createHabitDto.ToEntity();
 
         dbContext.Habits.Add(habit);
