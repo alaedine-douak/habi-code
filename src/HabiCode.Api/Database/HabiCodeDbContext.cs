@@ -7,8 +7,8 @@ namespace HabiCode.Api.Database;
 public sealed class HabiCodeDbContext(DbContextOptions<HabiCodeDbContext> options) 
     : DbContext(options)
 {
-
     public DbSet<Habit> Habits { get; set; }
+    public DbSet<Tag> Tags { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
