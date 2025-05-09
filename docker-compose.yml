@@ -9,11 +9,11 @@ services:
       - 5001:8081
     environment:
       # seq
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.seq:5341/ingest/otlp
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.seq:5341/ingest/otlp
+      # - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       # Aspire dashboard
-      # - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.aspire-dashboard:18889
-      # - OTEL_EXPORTER_OTLP_PROTOCOL=grcp 
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://habicode.aspire-dashboard:18889
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grcp 
 
   habicode.postgres:
     image: postgres:17.2

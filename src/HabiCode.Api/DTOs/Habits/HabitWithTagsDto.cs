@@ -1,18 +1,17 @@
 ﻿using HabiCode.Api.Entities;
-using Newtonsoft.Json;
 
 namespace HabiCode.Api.DTOs.Habits;
 
+//public sealed record HabitWithTagsDto : HabitDto
+//{
+//    [JsonProperty(Order = int.MaxValue)]
+//    public required string[] Tags { get; init; }
+//}
 
-public sealed record HabitsCollectionDto
-{
-    public List<HabitDto> Results { get; init; } 
-}
-
-public sealed record HabitDto
+public sealed record HabitWithTagsDto
 {
     public required string Id { get; init; }
-    public required string Name { get; init; } 
+    public required string Name { get; init; }
     public string? Description { get; init; }
     public required HabitType Type { get; init; }
     public required FrequencyDto Frequency { get; init; }
@@ -24,22 +23,6 @@ public sealed record HabitDto
     public required DateTime CreatedAtUTC { get; init; }
     public DateTime? UpdatedAtUTC { get; init; }
     public DateTime? LastCompletedAtUTC { get; init; }
-}
 
-public sealed record MilestoneDto
-{
-    public required int Target { get; init; }
-    public required int Current { get; init; }
-}
-
-public sealed record TargetDto
-{
-    public required int Value { get; init; }
-    public required string Unit { get; init; }
-}
-
-public sealed record FrequencyDto
-{
-    public required FrequencyType Type { get; init; }
-    public required int TimesPerPeriod { get; init; }
+    public required string[] Tags { get; init; }
 }
