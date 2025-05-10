@@ -1,9 +1,10 @@
-﻿using HabiCode.Api.Entities;
+﻿using HabiCode.Api.DTOs.Common;
+using HabiCode.Api.Entities;
 using Newtonsoft.Json;
 
 namespace HabiCode.Api.DTOs.Habits;
 
-public sealed record HabitDto
+public sealed record HabitDto : ILinksResponse
 {
     public required string Id { get; init; }
     public required string Name { get; init; } 
@@ -18,6 +19,7 @@ public sealed record HabitDto
     public required DateTime CreatedAtUTC { get; init; }
     public DateTime? UpdatedAtUTC { get; init; }
     public DateTime? LastCompletedAtUTC { get; init; }
+    public List<LinkDto> Links { get; set; }
 }
 
 public sealed record MilestoneDto

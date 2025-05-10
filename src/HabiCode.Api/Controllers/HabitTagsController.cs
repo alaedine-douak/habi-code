@@ -10,6 +10,9 @@ namespace HabiCode.Api.Controllers;
 [Route("habits/{habitId}/tags")]
 public class HabitTagsController(HabiCodeDbContext dbContext) : ControllerBase
 {
+
+    public static readonly string Name = nameof(HabitTagsController).Replace("Controller", "");
+
     [HttpPut]
     public async Task<ActionResult> UpsertHabitTags(string habitId, UpsertHabitTagsDto upsertHabitTagsDto)
     {

@@ -93,7 +93,11 @@ public static class DependencyInjection
         builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ =>
             HabitMappings.SortMapping);
 
+        builder.Services.AddHttpContextAccessor();
         builder.Services.AddTransient<DataShapingService>();
+
+        builder.Services.AddTransient<LinkService>();
+
 
         return builder;
     }
