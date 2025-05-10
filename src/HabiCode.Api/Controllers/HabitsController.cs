@@ -7,6 +7,8 @@ using HabiCode.Api.Entities;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Dynamic.Core;
+using HabiCode.Api.Services.Sorting;
 
 namespace HabiCode.Api.Controllers;
 
@@ -15,7 +17,9 @@ namespace HabiCode.Api.Controllers;
 public sealed class HabitsController(HabiCodeDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<HabitsCollectionDto>> GetHabits([FromQuery] HabitsQueryParameters habitsQuery)
+    public async Task<ActionResult<HabitsCollectionDto>> GetHabits(
+        [FromQuery] HabitsQueryParameters habitsQuery,
+        SortMappingProvider sortMappingProvider)
     {
         habitsQuery.Search ??= habitsQuery.Search?.Trim().ToLower();
 
@@ -33,6 +37,37 @@ public sealed class HabitsController(HabiCodeDbContext dbContext) : ControllerBa
         //    .ToListAsync();
 
         // 2. after
+        //List<HabitDto> habits = await dbContext
+        //    .Habits
+        //    .Where(h => habitsQuery.Search == null ||
+        //                h.Name.ToLower().Contains(habitsQuery.Search) ||
+        //                h.Description != null && h.Description.ToLower().Contains(habitsQuery.Search))
+        //    .Where(h => habitsQuery.Type == null || h.Type == habitsQuery.Type)
+        //    .Where(h => habitsQuery.Status == null || h.Status == habitsQuery.Status)
+        //    .Select(HabitQueries.ProjectToDto())
+        //    .ToListAsync();
+
+        //Expression<Func<Habit, object>> orderBy = habitsQuery.Sort switch
+        //{
+        //    "name" => h => h.Name,
+        //    "description" => h => h.Description,
+        //    "type" => h => h.Type,
+        //    "status" => h => h.Type,
+        //    _ => h => h.Name
+        //};
+
+        // 3. sorting
+        if (!sortMappingProvider.ValidateMappings<HabitDto, Habit>(habitsQuery.Sort))
+        {
+            return Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The Provided sort parameter isn't valid: '{habitsQuery.Sort}'");
+        }
+
+        // 3. sorting
+        SortMapping[] sortMappings = sortMappingProvider.GetMappings<HabitDto, Habit>();
+
+        // 3. sorting
         List<HabitDto> habits = await dbContext
             .Habits
             .Where(h => habitsQuery.Search == null ||
@@ -40,6 +75,7 @@ public sealed class HabitsController(HabiCodeDbContext dbContext) : ControllerBa
                         h.Description != null && h.Description.ToLower().Contains(habitsQuery.Search))
             .Where(h => habitsQuery.Type == null || h.Type == habitsQuery.Type)
             .Where(h => habitsQuery.Status == null || h.Status == habitsQuery.Status)
+            .ApplySort(habitsQuery.Sort, sortMappings)
             .Select(HabitQueries.ProjectToDto())
             .ToListAsync();
 

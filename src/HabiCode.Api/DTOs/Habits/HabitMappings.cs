@@ -1,9 +1,37 @@
 ﻿using HabiCode.Api.Entities;
+using HabiCode.Api.Services.Sorting;
 
 namespace HabiCode.Api.DTOs.Habits;
 
 public static class HabitMappings
 {
+    public static readonly SortMappingDefinition<HabitDto, Habit> SortMapping = new()
+    {
+        Mappings =
+        [
+            new SortMapping(nameof(HabitDto.Name), nameof(Habit.Name)),
+            new SortMapping(nameof(HabitDto.Description), nameof(Habit.Description)),
+            new SortMapping(nameof(HabitDto.Type), nameof(Habit.Type)),
+            new SortMapping(
+                $"{nameof(HabitDto.Frequency)}.{nameof(FrequencyDto.Type)}",
+                $"{nameof(Habit.Frequency)}.{nameof(Frequency.Type)}"),
+            new SortMapping(
+                $"{nameof(HabitDto.Frequency)}.{nameof(FrequencyDto.TimesPerPeriod)}",
+                $"{nameof(Habit.Frequency)}.{nameof(Frequency.TimesPerPeriod)}"),
+            new SortMapping(
+                $"{nameof(HabitDto.Target)}.{nameof(TargetDto.Value)}",
+                $"{nameof(Habit.Target)}.{nameof(Target.Value)}"),
+            new SortMapping(
+                $"{nameof(HabitDto.Target)}.{nameof(TargetDto.Unit)}",
+                $"{nameof(Habit.Target)}.{nameof(Target.Unit)}"),
+            new SortMapping(nameof(HabitDto.Status), nameof(Habit.Status)),
+            new SortMapping(nameof(HabitDto.EndDate), nameof(Habit.EndDate)),
+            new SortMapping(nameof(HabitDto.CreatedAtUTC), nameof(Habit.CreatedAtUTC)),
+            new SortMapping(nameof(HabitDto.UpdatedAtUTC), nameof(Habit.UpdatedAtUTC)),
+            new SortMapping(nameof(HabitDto.LastCompletedAtUTC), nameof(Habit.LastCompletedAtUTC)),
+        ]
+    };
+
     public static HabitDto ToDto(this Habit habit)
     {
         return new HabitDto

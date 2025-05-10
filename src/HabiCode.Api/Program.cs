@@ -1,7 +1,10 @@
 using FluentValidation;
 using HabiCode.Api.Database;
+using HabiCode.Api.DTOs.Habits;
+using HabiCode.Api.Entities;
 using HabiCode.Api.Extensions;
 using HabiCode.Api.Middleware;
+using HabiCode.Api.Services.Sorting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
@@ -59,6 +62,10 @@ builder.Logging.AddOpenTelemetry(options =>
     options.IncludeScopes = true;
     options.IncludeFormattedMessage = true;
 });
+
+builder.Services.AddTransient<SortMappingProvider>();
+builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ => 
+    HabitMappings.SortMapping);
 
 WebApplication app = builder.Build();
 
