@@ -15,10 +15,31 @@ namespace HabiCode.Api.Controllers;
 public sealed class HabitsController(HabiCodeDbContext dbContext) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<HabitsCollectionDto>> GetHabits()
+    public async Task<ActionResult<HabitsCollectionDto>> GetHabits([FromQuery] HabitsQueryParameters habitsQuery)
     {
+        habitsQuery.Search ??= habitsQuery.Search?.Trim().ToLower();
+
+        // 1. before
+        //IQueryable<Habit> query = dbContext.Habits;
+
+        //if (!string.IsNullOrWhiteSpace(search))
+        //{
+        //    query = query.Where(h => h.Name.ToLower().Contains(search) 
+        //        || h.Description != null && h.Description.ToLower().Contains(search));
+        //}
+
+        //List<HabitDto> habits = await query
+        //    .Select(HabitQueries.ProjectToDto())
+        //    .ToListAsync();
+
+        // 2. after
         List<HabitDto> habits = await dbContext
             .Habits
+            .Where(h => habitsQuery.Search == null ||
+                        h.Name.ToLower().Contains(habitsQuery.Search) ||
+                        h.Description != null && h.Description.ToLower().Contains(habitsQuery.Search))
+            .Where(h => habitsQuery.Type == null || h.Type == habitsQuery.Type)
+            .Where(h => habitsQuery.Status == null || h.Status == habitsQuery.Status)
             .Select(HabitQueries.ProjectToDto())
             .ToListAsync();
 
