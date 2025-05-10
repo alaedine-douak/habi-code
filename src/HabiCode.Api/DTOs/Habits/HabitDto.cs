@@ -3,12 +3,6 @@ using Newtonsoft.Json;
 
 namespace HabiCode.Api.DTOs.Habits;
 
-
-public sealed record HabitsCollectionDto
-{
-    public List<HabitDto> Results { get; init; } 
-}
-
 public sealed record HabitDto
 {
     public required string Id { get; init; }

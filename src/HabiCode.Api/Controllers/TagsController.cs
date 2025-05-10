@@ -23,7 +23,7 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
 
         var tagsCollectionDto = new TagsCollectionDto
         {
-            Results = tags
+            Items = tags
         };
 
         return Ok(tagsCollectionDto);

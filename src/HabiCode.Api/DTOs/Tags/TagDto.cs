@@ -1,9 +1,6 @@
-﻿namespace HabiCode.Api.DTOs.Tags;
+﻿using HabiCode.Api.DTOs.Habits;
 
-public sealed record TagsCollectionDto
-{
-    public List<TagDto> Results { get; set; }
-}
+namespace HabiCode.Api.DTOs.Tags;
 
 public sealed record TagDto
 {
