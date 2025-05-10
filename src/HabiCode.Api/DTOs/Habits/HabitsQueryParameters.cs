@@ -22,4 +22,8 @@ public sealed record HabitsQueryParameters
     // # pagination
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
+
+    // # Content negotiation
+    [FromHeader(Name = "Accept")]
+    public string? Accept { get; init; }
 }

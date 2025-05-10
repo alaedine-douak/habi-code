@@ -13,6 +13,8 @@ using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 
 namespace HabiCode.Api;
 
@@ -27,6 +29,15 @@ public static class DependencyInjection
         .AddNewtonsoftJson(options =>
             options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver())
         .AddXmlSerializerFormatters();
+
+        builder.Services.Configure<MvcOptions>(options =>
+        {
+            NewtonsoftJsonOutputFormatter formatter = options.OutputFormatters
+                .OfType<NewtonsoftJsonOutputFormatter>()
+                .First();
+
+            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
+        });
 
         builder.Services.AddOpenApi();
 

@@ -136,22 +136,26 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
             .Take(query.PageSize)
             .ToListAsync();
 
+        bool includeLinks = query.Accept == CustomMediaTypeNames.Application.HateoasJson;
+
         var paginationResult = new PaginationResult<ExpandoObject>
         {
             Items = shapingService.ShapeCollectionData(
                 habits,
                 query.Fields,
-                h => CreateLinksForHabit(h.Id, query.Fields)),
+                includeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = totalCount,
         };
 
-        paginationResult.Links = CreateLinksForHabits(
-            query,
-            paginationResult.HasNextPage,
-            paginationResult.HasPreviousPage);
-
+        if (includeLinks)
+        {
+            paginationResult.Links = CreateLinksForHabits(
+           query,
+           paginationResult.HasNextPage,
+           paginationResult.HasPreviousPage);
+        }
 
         return Ok(paginationResult);
     }
@@ -160,6 +164,7 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
     public async Task<IActionResult> GetHabit(
         string id, 
         string? fields,
+        [FromHeader(Name = "Accept")] string? accept,
         DataShapingService shapingService)
     {
         if (!shapingService.Validate<HabitWithTagsDto>(fields))
@@ -182,9 +187,12 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
 
         ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, fields);
 
-        var links = CreateLinksForHabit(id, fields);
+        if (accept == CustomMediaTypeNames.Application.HateoasJson)
+        {
+            var links = CreateLinksForHabit(id, fields);
 
-        shapedHabitDto.TryAdd("links", links);
+            shapedHabitDto.TryAdd("links", links);
+        }
 
         return Ok(shapedHabitDto);
     }
