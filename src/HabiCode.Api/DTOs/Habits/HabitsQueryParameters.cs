@@ -13,8 +13,13 @@ public sealed record HabitsQueryParameters
     public HabitType? Type { get; init; }
     public HabitStatus? Status { get; init; }
 
+    // # sorting
     public string? Sort { get; init; }
 
+    // # data shaping
+    public string? Fields { get; init; }
+
+    // # pagination
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
 }

@@ -4,9 +4,11 @@ using HabiCode.Api.DTOs.Habits;
 using HabiCode.Api.Entities;
 using HabiCode.Api.Extensions;
 using HabiCode.Api.Middleware;
+using HabiCode.Api.Services;
 using HabiCode.Api.Services.Sorting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Newtonsoft.Json.Serialization;
 using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -20,7 +22,8 @@ builder.Services.AddControllers(options =>
 {
     options.ReturnHttpNotAcceptable = true;
 })
-.AddNewtonsoftJson()
+.AddNewtonsoftJson(options => 
+    options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver())
 .AddXmlSerializerFormatters();
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
@@ -66,6 +69,8 @@ builder.Logging.AddOpenTelemetry(options =>
 builder.Services.AddTransient<SortMappingProvider>();
 builder.Services.AddSingleton<ISortMappingDefinition, SortMappingDefinition<HabitDto, Habit>>(_ => 
     HabitMappings.SortMapping);
+
+builder.Services.AddTransient<DataShapingService>();
 
 WebApplication app = builder.Build();
 
