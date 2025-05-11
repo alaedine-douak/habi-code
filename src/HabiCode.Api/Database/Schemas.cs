@@ -3,4 +3,5 @@
 public static class Schemas
 {
     public const string HabiCode = "habi_code";
+    public const string Identity = "identity";
 }

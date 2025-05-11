@@ -23,7 +23,8 @@ builder
     .AddDatabase()
     .AddErrorHandling()
     .AddObservability()
-    .AddApplicationServices();
+    .AddApplicationServices()
+    .AddAuthenticationServices();
 
 WebApplication app = builder.Build();
 

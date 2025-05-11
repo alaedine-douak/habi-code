@@ -16,6 +16,8 @@ using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Asp.Versioning;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Identity;
 
 namespace HabiCode.Api;
 
@@ -82,6 +84,14 @@ public static class DependencyInjection
                         .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.HabiCode))
                 .UseSnakeCaseNamingConvention());
 
+        builder.Services
+            .AddDbContext<HabiCodeIdentityDbContext>(options =>
+                options.UseNpgsql(
+                 builder.Configuration.GetConnectionString("Database"),
+                 npgsqlOptions => npgsqlOptions
+                        .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.Identity))
+                .UseSnakeCaseNamingConvention());
+
         return builder;
     }
 
@@ -141,6 +151,15 @@ public static class DependencyInjection
 
         builder.Services.AddTransient<LinkService>();
 
+
+        return builder;
+    }
+
+    public static WebApplicationBuilder AddAuthenticationServices(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddIdentity<IdentityUser, IdentityRole>()
+            .AddEntityFrameworkStores<HabiCodeIdentityDbContext>();
 
         return builder;
     }
