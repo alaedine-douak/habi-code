@@ -15,57 +15,86 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Asp.Versioning;
 
 namespace HabiCode.Api;
 
 public static class DependencyInjection
 {
-    public static WebApplicationBuilder AddControllers(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddApiServices(this WebApplicationBuilder builder)
     {
-        builder.Services.AddControllers(options =>
-        {
-            options.ReturnHttpNotAcceptable = true;
-        })
-        .AddNewtonsoftJson(options =>
-            options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver())
-        .AddXmlSerializerFormatters();
+        builder.Services
+            .AddControllers(options =>
+            {
+                options.ReturnHttpNotAcceptable = true;
+            })
+            .AddNewtonsoftJson(options =>
+                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver())
+            .AddXmlSerializerFormatters();
 
-        builder.Services.Configure<MvcOptions>(options =>
-        {
-            NewtonsoftJsonOutputFormatter formatter = options.OutputFormatters
-                .OfType<NewtonsoftJsonOutputFormatter>()
-                .First();
+        builder.Services
+            .Configure<MvcOptions>(options =>
+            {
+                NewtonsoftJsonOutputFormatter formatter = options.OutputFormatters
+                    .OfType<NewtonsoftJsonOutputFormatter>()
+                    .First();
 
-            // Access media type globaly
-            formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
-        });
+                // Access media type globaly
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV1);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.JsonV2);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV1);
+                formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJsonV2);
+            });
 
-        builder.Services.AddOpenApi();
+        builder.Services
+            .AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1.0);
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ReportApiVersions = true;
+                options.ApiVersionSelector = new DefaultApiVersionSelector(options); // Selects the first version in the list
+                //options.ApiVersionSelector = new CurrentImplementationApiVersionSelector(options); // Selects the latest version
+
+                //options.ApiVersionReader = new UrlSegmentApiVersionReader();
+                options.ApiVersionReader = ApiVersionReader.Combine(
+                    new MediaTypeApiVersionReader(),
+                    new MediaTypeApiVersionReaderBuilder()
+                        .Template("application/vnd.habicode.hateoas.{version}+json")
+                        .Build());
+
+            })
+            .AddMvc();
+
+        builder.Services
+            .AddOpenApi();
 
         return builder;
     }
 
     public static WebApplicationBuilder AddDatabase(this WebApplicationBuilder builder)
     {
-        builder.Services.AddDbContext<HabiCodeDbContext>(options =>
-            options.UseNpgsql(
-                builder.Configuration.GetConnectionString("Database"),
-                npgsqlOptions => npgsqlOptions
-                    .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.HabiCode))
-            .UseSnakeCaseNamingConvention());
+        builder.Services
+            .AddDbContext<HabiCodeDbContext>(options =>
+                options.UseNpgsql(
+                 builder.Configuration.GetConnectionString("Database"),
+                 npgsqlOptions => npgsqlOptions
+                        .MigrationsHistoryTable(HistoryRepository.DefaultTableName, Schemas.HabiCode))
+                .UseSnakeCaseNamingConvention());
 
         return builder;
     }
 
     public static WebApplicationBuilder AddErrorHandling(this WebApplicationBuilder builder)
     {
-        builder.Services.AddProblemDetails(options =>
-        {
-            options.CustomizeProblemDetails = context =>
+        builder.Services
+            .AddProblemDetails(options =>
             {
-                context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
-            };
-        });
+                options.CustomizeProblemDetails = context =>
+                {
+                    context.ProblemDetails.Extensions.TryAdd("requestId", context.HttpContext.TraceIdentifier);
+                };
+            });
 
         builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
         builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -76,23 +105,25 @@ public static class DependencyInjection
 
     public static WebApplicationBuilder AddObservability(this WebApplicationBuilder builder)
     {
-        builder.Services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
-            .WithTracing(tracing => tracing
-                .AddHttpClientInstrumentation()
-                .AddAspNetCoreInstrumentation()
-                .AddNpgsql())
-            .WithMetrics(metrics => metrics
-                .AddHttpClientInstrumentation()
-                .AddAspNetCoreInstrumentation()
-                .AddRuntimeInstrumentation())
-            .UseOtlpExporter();
+        builder.Services
+            .AddOpenTelemetry()
+                .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName))
+                .WithTracing(tracing => tracing
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddNpgsql())
+                .WithMetrics(metrics => metrics
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddRuntimeInstrumentation())
+                .UseOtlpExporter();
 
-        builder.Logging.AddOpenTelemetry(options =>
-        {
-            options.IncludeScopes = true;
-            options.IncludeFormattedMessage = true;
-        });
+        builder.Logging
+            .AddOpenTelemetry(options =>
+            {
+                options.IncludeScopes = true;
+                options.IncludeFormattedMessage = true;
+            });
 
         return builder;
     }

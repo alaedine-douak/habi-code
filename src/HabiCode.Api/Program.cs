@@ -19,7 +19,7 @@ using OpenTelemetry.Trace;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder
-    .AddControllers()
+    .AddApiServices()
     .AddDatabase()
     .AddErrorHandling()
     .AddObservability()

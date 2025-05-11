@@ -15,15 +15,23 @@ using System.Dynamic;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using OpenTelemetry.Trace;
 using System.Net.Mime;
+using Asp.Versioning;
 
 namespace HabiCode.Api.Controllers;
 
 [ApiController]
+// UriApiVersioning
+//[Route("v{version:apiVersion}/habits")]
+//[ApiVersion(1.0)]
+//[ApiVersion(2.0)]
+
+// MediaTypeVersion
 [Route("habits")]
+[ApiVersion(1.0)]
 public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService linkService) : ControllerBase
 {
     [HttpGet]
-    [Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
+    //[Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
     public async Task<IActionResult> GetHabits(
         [FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider,
@@ -163,6 +171,8 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
     }
 
     [HttpGet("{id}")]
+    //[MapToApiVersion(1.0)] // UriApiVersioning
+    [MapToApiVersion(1.0)] // MediaTypeVersion
     public async Task<IActionResult> GetHabit(
         string id, 
         string? fields,
@@ -180,6 +190,45 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
             .Habits
             .Where(h => h.Id == id)
             .Select(HabitQueries.ProjectToDtoWithTags())
+            .FirstOrDefaultAsync();
+
+        if (habit is null)
+        {
+            return NotFound();
+        }
+
+        ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, fields);
+
+        if (accept == CustomMediaTypeNames.Application.HateoasJson)
+        {
+            var links = CreateLinksForHabit(id, fields);
+
+            shapedHabitDto.TryAdd("links", links);
+        }
+
+        return Ok(shapedHabitDto);
+    }
+
+    [HttpGet("{id}")]
+    //[MapToApiVersion(2.0)] // UriApiVersioning
+    [ApiVersion(2.0)]
+    public async Task<IActionResult> GetHabitV2(
+        string id,
+        string? fields,
+        [FromHeader(Name = "Accept")] string? accept,
+        DataShapingService shapingService)
+    {
+        if (!shapingService.Validate<HabitWithTagsDtoV2>(fields))
+        {
+            return Problem(
+            statusCode: StatusCodes.Status400BadRequest,
+                detail: $"The provided data shaping fields aren't valid: '{fields}'");
+        }
+
+        HabitWithTagsDtoV2? habit = await dbContext
+            .Habits
+            .Where(h => h.Id == id)
+            .Select(HabitQueries.ProjectToDtoWithTagsV2())
             .FirstOrDefaultAsync();
 
         if (habit is null)
