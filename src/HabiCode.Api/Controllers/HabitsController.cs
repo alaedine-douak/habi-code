@@ -14,6 +14,7 @@ using HabiCode.Api.Services;
 using System.Dynamic;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using OpenTelemetry.Trace;
+using System.Net.Mime;
 
 namespace HabiCode.Api.Controllers;
 
@@ -22,6 +23,7 @@ namespace HabiCode.Api.Controllers;
 public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService linkService) : ControllerBase
 {
     [HttpGet]
+    [Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
     public async Task<IActionResult> GetHabits(
         [FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider,

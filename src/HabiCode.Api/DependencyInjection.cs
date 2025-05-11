@@ -36,6 +36,7 @@ public static class DependencyInjection
                 .OfType<NewtonsoftJsonOutputFormatter>()
                 .First();
 
+            // Access media type globaly
             formatter.SupportedMediaTypes.Add(CustomMediaTypeNames.Application.HateoasJson);
         });
 

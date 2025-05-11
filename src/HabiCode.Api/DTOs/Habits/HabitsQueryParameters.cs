@@ -7,7 +7,7 @@ public sealed record HabitsQueryParameters
 {
     // # search query
     [FromQuery(Name = "q")]
-    public string? Search { get; set; }
+    public string? Search { get; set; } 
 
     // # filtering
     public HabitType? Type { get; init; }
