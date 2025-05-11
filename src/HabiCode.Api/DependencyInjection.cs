@@ -60,7 +60,7 @@ public static class DependencyInjection
                 options.ApiVersionReader = ApiVersionReader.Combine(
                     new MediaTypeApiVersionReader(),
                     new MediaTypeApiVersionReaderBuilder()
-                        .Template("application/vnd.habicode.hateoas.{version}+json")
+                        .Template("application/vnd.habicode.hateoas.v{version}+json")
                         .Build());
 
             })

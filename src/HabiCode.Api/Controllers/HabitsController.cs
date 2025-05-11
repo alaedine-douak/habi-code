@@ -20,59 +20,26 @@ using Asp.Versioning;
 namespace HabiCode.Api.Controllers;
 
 [ApiController]
-// UriApiVersioning
-//[Route("v{version:apiVersion}/habits")]
-//[ApiVersion(1.0)]
-//[ApiVersion(2.0)]
-
-// MediaTypeVersion
 [Route("habits")]
 [ApiVersion(1.0)]
-public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService linkService) : ControllerBase
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomMediaTypeNames.Application.JsonV1,
+    CustomMediaTypeNames.Application.JsonV2,
+    CustomMediaTypeNames.Application.HateoasJson,
+    CustomMediaTypeNames.Application.HateoasJsonV1,
+    CustomMediaTypeNames.Application.HateoasJsonV2)]
+public sealed class HabitsController(
+    HabiCodeDbContext dbContext, 
+    LinkService linkService) 
+    : ControllerBase
 {
     [HttpGet]
-    //[Produces(MediaTypeNames.Application.Json, CustomMediaTypeNames.Application.HateoasJson)]
     public async Task<IActionResult> GetHabits(
         [FromQuery] HabitsQueryParameters query,
         SortMappingProvider sortMappingProvider,
         DataShapingService shapingService)
     {
-        query.Search ??= query.Search?.Trim().ToLower();
-
-        // 1. before
-        //IQueryable<Habit> query = dbContext.Habits;
-
-        //if (!string.IsNullOrWhiteSpace(search))
-        //{
-        //    query = query.Where(h => h.Name.ToLower().Contains(search) 
-        //        || h.Description != null && h.Description.ToLower().Contains(search));
-        //}
-
-        //List<HabitDto> habits = await query
-        //    .Select(HabitQueries.ProjectToDto())
-        //    .ToListAsync();
-
-        // 2. after
-        //List<HabitDto> habits = await dbContext
-        //    .Habits
-        //    .Where(h => habitsQuery.Search == null ||
-        //                h.Name.ToLower().Contains(habitsQuery.Search) ||
-        //                h.Description != null && h.Description.ToLower().Contains(habitsQuery.Search))
-        //    .Where(h => habitsQuery.Type == null || h.Type == habitsQuery.Type)
-        //    .Where(h => habitsQuery.Status == null || h.Status == habitsQuery.Status)
-        //    .Select(HabitQueries.ProjectToDto())
-        //    .ToListAsync();
-
-        //Expression<Func<Habit, object>> orderBy = habitsQuery.Sort switch
-        //{
-        //    "name" => h => h.Name,
-        //    "description" => h => h.Description,
-        //    "type" => h => h.Type,
-        //    "status" => h => h.Type,
-        //    _ => h => h.Name
-        //};
-
-        // 3. sorting
         if (!sortMappingProvider.ValidateMappings<HabitDto, Habit>(query.Sort))
         {
             return Problem(
@@ -87,40 +54,9 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
                 detail: $"The provided data shaping fields aren't valid: '{query.Fields}'");
         }
 
-        // 3. sorting
+        query.Search ??= query.Search?.Trim().ToLower();
+
         SortMapping[] sortMappings = sortMappingProvider.GetMappings<HabitDto, Habit>();
-
-        // 3. sorting
-        //List<HabitDto> habits = await dbContext
-        //    .Habits
-        //    .Where(h => query.Search == null ||
-        //                h.Name.ToLower().Contains(query.Search) ||
-        //                h.Description != null && h.Description.ToLower().Contains(query.Search))
-        //    .Where(h => query.Type == null || h.Type == query.Type)
-        //    .Where(h => query.Status == null || h.Status == query.Status)
-        //    .ApplySort(query.Sort, sortMappings)
-        //    .Select(HabitQueries.ProjectToDto())
-        //    .ToListAsync();
-
-        // 4. pagination
-        //IQueryable<Habit> habitsQuery = dbContext
-        //    .Habits
-        //    .Where(h => query.Search == null ||
-        //            h.Name.ToLower().Contains(query.Search) ||
-        //            h.Description != null && h.Description.ToLower().Contains(query.Search))
-        //    .Where(h => query.Type == null || h.Type == query.Type)
-        //    .Where(h => query.Status == null || h.Status == query.Status);
-
-        //int totalCount = await habitsQuery.CountAsync();
-
-        //List<HabitDto> habits = await habitsQuery
-        //    .ApplySort(query.Sort, sortMappings)
-        //    .Skip((query.Page - 1) * query.PageSize)
-        //    .Take(query.PageSize)
-        //    .Select(HabitQueries.ProjectToDto())
-        //    .ToListAsync();
-
-        // 4.1. pagination
 
         IQueryable<HabitDto> habitsQuery = dbContext
             .Habits
@@ -132,34 +68,24 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
             .ApplySort(query.Sort, sortMappings)
             .Select(HabitQueries.ProjectToDto());
 
-        // 4.2. pagination
-        //var paginationResult = await PaginationResult<HabitDto>.CreateAsync(
-        //    habitsQuery,
-        //    query.Page,
-        //    query.PageSize);
-
-        // 5. data shaping
-        
         int totalCount = await habitsQuery.CountAsync();
         List<HabitDto> habits = await habitsQuery
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync();
 
-        bool includeLinks = query.Accept == CustomMediaTypeNames.Application.HateoasJson;
-
         var paginationResult = new PaginationResult<ExpandoObject>
         {
             Items = shapingService.ShapeCollectionData(
                 habits,
                 query.Fields,
-                includeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
+                query.IncludeLinks ? h => CreateLinksForHabit(h.Id, query.Fields) : null),
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = totalCount,
         };
 
-        if (includeLinks)
+        if (query.IncludeLinks)
         {
             paginationResult.Links = CreateLinksForHabits(
            query,
@@ -171,19 +97,17 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
     }
 
     [HttpGet("{id}")]
-    //[MapToApiVersion(1.0)] // UriApiVersioning
-    [MapToApiVersion(1.0)] // MediaTypeVersion
+    [MapToApiVersion(1.0)]
     public async Task<IActionResult> GetHabit(
-        string id, 
-        string? fields,
-        [FromHeader(Name = "Accept")] string? accept,
+        string id,
+        [FromQuery] HabitsQueryParameters query,
         DataShapingService shapingService)
     {
-        if (!shapingService.Validate<HabitWithTagsDto>(fields))
+        if (!shapingService.Validate<HabitWithTagsDto>(query.Fields))
         {
             return Problem(
             statusCode: StatusCodes.Status400BadRequest,
-                detail: $"The provided data shaping fields aren't valid: '{fields}'");
+                detail: $"The provided data shaping fields aren't valid: '{query.Fields}'");
         }
 
         HabitWithTagsDto? habit = await dbContext
@@ -197,11 +121,11 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
             return NotFound();
         }
 
-        ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, fields);
+        ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, query.Fields);
 
-        if (accept == CustomMediaTypeNames.Application.HateoasJson)
+        if (query.IncludeLinks)
         {
-            var links = CreateLinksForHabit(id, fields);
+            var links = CreateLinksForHabit(id, query.Fields);
 
             shapedHabitDto.TryAdd("links", links);
         }
@@ -210,19 +134,17 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
     }
 
     [HttpGet("{id}")]
-    //[MapToApiVersion(2.0)] // UriApiVersioning
     [ApiVersion(2.0)]
     public async Task<IActionResult> GetHabitV2(
         string id,
-        string? fields,
-        [FromHeader(Name = "Accept")] string? accept,
+        [FromQuery] HabitsQueryParameters query,
         DataShapingService shapingService)
     {
-        if (!shapingService.Validate<HabitWithTagsDtoV2>(fields))
+        if (!shapingService.Validate<HabitWithTagsDtoV2>(query.Fields))
         {
             return Problem(
             statusCode: StatusCodes.Status400BadRequest,
-                detail: $"The provided data shaping fields aren't valid: '{fields}'");
+                detail: $"The provided data shaping fields aren't valid: '{query.Fields}'");
         }
 
         HabitWithTagsDtoV2? habit = await dbContext
@@ -236,11 +158,11 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
             return NotFound();
         }
 
-        ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, fields);
+        ExpandoObject shapedHabitDto = shapingService.ShapeData(habit, query.Fields);
 
-        if (accept == CustomMediaTypeNames.Application.HateoasJson)
+        if (query.IncludeLinks)
         {
-            var links = CreateLinksForHabit(id, fields);
+            var links = CreateLinksForHabit(id, query.Fields);
 
             shapedHabitDto.TryAdd("links", links);
         }
@@ -249,16 +171,10 @@ public sealed class HabitsController(HabiCodeDbContext dbContext, LinkService li
     }
 
     [HttpPost]
-    public async Task<ActionResult<HabitDto>> CreateHabit(CreateHabitDto createHabitDto, IValidator<CreateHabitDto> validator)
+    public async Task<ActionResult<HabitDto>> CreateHabit(
+        CreateHabitDto createHabitDto, 
+        IValidator<CreateHabitDto> validator)
     {
-        //1. before we added ValidationExceptionHandler Middleware
-        //ValidationResult validationResult = await validator.ValidateAsync(createHabitDto);
-        //if (!validationResult.IsValid)
-        //{ 
-        //    return BadRequest(validationResult.ToDictionary());
-        //}
-
-        //2. After we add ValidationExceptionHandler Middleware
         await validator.ValidateAndThrowAsync(createHabitDto);
 
         Habit habit = createHabitDto.ToEntity();

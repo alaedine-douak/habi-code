@@ -1,8 +1,11 @@
-﻿using FluentValidation;
+﻿using System.Net.Mime;
+using FluentValidation;
 using FluentValidation.Results;
 using HabiCode.Api.Database;
+using HabiCode.Api.DTOs.Common;
 using HabiCode.Api.DTOs.Tags;
 using HabiCode.Api.Entities;
+using HabiCode.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +14,18 @@ namespace HabiCode.Api.Controllers;
 
 [ApiController]
 [Route("tags")]
-public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
+[Produces(
+    MediaTypeNames.Application.Json,
+    CustomMediaTypeNames.Application.JsonV1,
+    CustomMediaTypeNames.Application.HateoasJson,
+    CustomMediaTypeNames.Application.HateoasJsonV1)]
+public sealed class TagsController(
+    HabiCodeDbContext dbContext, 
+    LinkService linkService) 
+    : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<TagsCollectionDto>> GetTags()
+    public async Task<ActionResult<TagsCollectionDto>> GetTags([FromHeader] AcceptHeaderDto acceptHeader)
     {
         List<TagDto> tags = await dbContext
             .Tags
@@ -23,15 +34,23 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
 
         var tagsCollectionDto = new TagsCollectionDto
         {
+            //1. Implement links for each tach in the collection
+
             Items = tags
         };
+
+        if (acceptHeader.IncludeLinks)
+        {
+            tagsCollectionDto.Links = CreateLinksForTags();
+        }
 
         return Ok(tagsCollectionDto);
     }
 
-
     [HttpGet("{id}")]
-    public async Task<ActionResult<TagDto>> GetTag(string id)
+    public async Task<ActionResult<TagDto>> GetTag(
+        string id, 
+        [FromHeader] AcceptHeaderDto acceptHeader)
     {
         TagDto? tag = await dbContext
             .Tags
@@ -42,6 +61,11 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
         if (tag is null)
         {
             return NotFound();
+        }
+
+        if (acceptHeader.IncludeLinks)
+        {
+            tag.Links = CreateLinksForTag(id);
         }
 
         return Ok(tag);
@@ -57,10 +81,6 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
 
         if (!validationResult.IsValid)
         {
-            //return BadRequest(validationResult.ToDictionary());
-
-            //return ValidationProblem(new ValidationProblemDetails(validationResult.ToDictionary()));
-
             ProblemDetails problem = problemDetailsFactory.CreateProblemDetails(
                 HttpContext,
                 StatusCodes.Status400BadRequest);
@@ -69,7 +89,6 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
 
             return BadRequest(problem);
         }
-
 
         Tag tag = createTagDto.ToEntity();
 
@@ -85,6 +104,8 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
         await dbContext.SaveChangesAsync();
 
         TagDto tagDto = tag.ToDto();
+
+        tagDto.Links = CreateLinksForTag(tagDto.Id);
 
         return CreatedAtAction(
             nameof(GetTag),
@@ -122,5 +143,24 @@ public sealed class TagsController(HabiCodeDbContext dbContext) : ControllerBase
         await dbContext.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    private List<LinkDto> CreateLinksForTags()
+    {
+        return
+        [
+            linkService.Create(nameof(GetTags), "self", HttpMethods.Get),
+            linkService.Create(nameof(CreateTag), "create", HttpMethods.Post),
+        ];
+    }
+
+    private List<LinkDto> CreateLinksForTag(string id)
+    {
+        return
+        [
+            linkService.Create(nameof(GetTag), "self", HttpMethods.Get, new { id}),
+            linkService.Create(nameof(UpdateTag), "update", HttpMethods.Put, new { id }),
+            linkService.Create(nameof(DeleteTag), "delete", HttpMethods.Delete, new { id }),
+        ];
     }
 }

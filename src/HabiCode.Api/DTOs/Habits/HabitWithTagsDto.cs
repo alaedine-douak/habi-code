@@ -2,12 +2,6 @@
 
 namespace HabiCode.Api.DTOs.Habits;
 
-//public sealed record HabitWithTagsDto : HabitDto
-//{
-//    [JsonProperty(Order = int.MaxValue)]
-//    public required string[] Tags { get; init; }
-//}
-
 public sealed record HabitWithTagsDto
 {
     public required string Id { get; init; }
