@@ -16,9 +16,11 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using OpenTelemetry.Trace;
 using System.Net.Mime;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HabiCode.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("habits")]
 [ApiVersion(1.0)]

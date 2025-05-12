@@ -6,12 +6,14 @@ using HabiCode.Api.DTOs.Common;
 using HabiCode.Api.DTOs.Tags;
 using HabiCode.Api.Entities;
 using HabiCode.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabiCode.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("tags")]
 [Produces(

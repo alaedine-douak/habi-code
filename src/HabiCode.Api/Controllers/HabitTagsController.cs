@@ -1,11 +1,13 @@
 ﻿using HabiCode.Api.Database;
 using HabiCode.Api.DTOs.HabitTags;
 using HabiCode.Api.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabiCode.Api.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("habits/{habitId}/tags")]
 public class HabitTagsController(HabiCodeDbContext dbContext) : ControllerBase

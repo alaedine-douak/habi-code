@@ -1,10 +1,12 @@
 ﻿using HabiCode.Api.Database;
 using HabiCode.Api.DTOs.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabiCode.Api.Controllers;
 
+[Authorize]
 [ApiController] 
 [Route("users")]
 public sealed class UsersController(HabiCodeDbContext dbContext) : ControllerBase
@@ -23,6 +25,6 @@ public sealed class UsersController(HabiCodeDbContext dbContext) : ControllerBas
             return NotFound();
         }
 
-        return Ok(id);
+        return Ok(user);
     }
 }
