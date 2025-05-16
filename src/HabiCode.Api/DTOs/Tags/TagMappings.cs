@@ -4,11 +4,12 @@ namespace HabiCode.Api.DTOs.Tags;
 
 public static class TagMappings
 {
-    public static Tag ToEntity(this CreateTagDto dto)
+    public static Tag ToEntity(this CreateTagDto dto, string userId)
     {
         Tag tag = new()
         {
             Id = $"t_{Guid.CreateVersion7()}",
+            UserId = userId,
             Name = dto.Name,
             Description = dto.Description,
             CreateAtUTC = DateTime.UtcNow

@@ -23,14 +23,23 @@ namespace HabiCode.Api.Controllers;
     CustomMediaTypeNames.Application.HateoasJsonV1)]
 public sealed class TagsController(
     HabiCodeDbContext dbContext, 
-    LinkService linkService) 
+    LinkService linkService,
+    UserContext userContext) 
     : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<TagsCollectionDto>> GetTags([FromHeader] AcceptHeaderDto acceptHeader)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         List<TagDto> tags = await dbContext
             .Tags
+            .Where(t => t.UserId == userId)
             .Select(TagQueries.PrjectToDto())
             .ToListAsync();
 
@@ -54,9 +63,16 @@ public sealed class TagsController(
         string id, 
         [FromHeader] AcceptHeaderDto acceptHeader)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         TagDto? tag = await dbContext
             .Tags
-            .Where(t => t.Id == id)
+            .Where(t => t.Id == id && t.UserId == userId)
             .Select(TagQueries.PrjectToDto())
             .FirstOrDefaultAsync();
 
@@ -79,6 +95,13 @@ public sealed class TagsController(
         IValidator<CreateTagDto> validator,
         ProblemDetailsFactory problemDetailsFactory)
     {
+        string? userId = await userContext.GetUserIdAsync();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
         ValidationResult validationResult =  await validator.ValidateAsync(createTagDto);
 
         if (!validationResult.IsValid)
@@ -92,7 +115,7 @@ public sealed class TagsController(
             return BadRequest(problem);
         }
 
-        Tag tag = createTagDto.ToEntity();
+        Tag tag = createTagDto.ToEntity(userId);
 
         if (await dbContext.Tags.AnyAsync(t => t.Name == tag.Name))
         {
@@ -118,7 +141,13 @@ public sealed class TagsController(
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateTag(string id, UpdateTagDto updateTagDto)
     {
-        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id);
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
         if (tag is null)
         {
             return NotFound();
@@ -134,7 +163,13 @@ public sealed class TagsController(
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteTag(string id)
     {
-        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id);
+        string? userId = await userContext.GetUserIdAsync();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized();
+        }
+
+        Tag? tag = await dbContext.Tags.FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
         if (tag is null)
         {
             return NotFound();
