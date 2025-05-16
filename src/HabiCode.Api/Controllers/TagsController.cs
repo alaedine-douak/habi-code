@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HabiCode.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [ApiController]
 [Route("tags")]
 [Produces(

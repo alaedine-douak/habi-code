@@ -20,7 +20,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace HabiCode.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [ApiController]
 [Route("habits")]
 [ApiVersion(1.0)]
@@ -360,6 +360,12 @@ public sealed class HabitsController(
 
     private List<LinkDto> CreateLinksForHabit(string id, string? fields)
     {
+        //if (User.IsInRole(Roles.Member))
+        //{
+        //    // DO SOMETHING
+        //    // Link return Hypermedia links only if user is member
+        //}
+
         return
         [
             linkService.Create(nameof(GetHabit), "self", HttpMethods.Get, new { id, fields }),

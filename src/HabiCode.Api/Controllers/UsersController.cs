@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using HabiCode.Api.Database;
 using HabiCode.Api.DTOs.Users;
+using HabiCode.Api.Entities;
 using HabiCode.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HabiCode.Api.Controllers;
 
-[Authorize]
+[Authorize(Roles = Roles.Member)]
 [ApiController] 
 [Route("users")]
 public sealed class UsersController(
@@ -17,10 +18,10 @@ public sealed class UsersController(
     : ControllerBase
 {
     [HttpGet("{id}")]
+    [Authorize(Roles = Roles.Admin)]
     public async Task<ActionResult<UserDto>> GetUserById(string id)
     {
         string? userId = await userContext.GetUserIdAsync();
-
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
@@ -49,7 +50,6 @@ public sealed class UsersController(
     public async Task<ActionResult<UserDto>> GetCurrentUser()
     {
         string? userId = await userContext.GetUserIdAsync();
-
         if (string.IsNullOrWhiteSpace(userId))
         {
             return Unauthorized();
@@ -57,7 +57,7 @@ public sealed class UsersController(
 
         UserDto? user = await dbContext
             .Users
-            .Where(u =>  u.Id ==  userId)
+            .Where(u =>  u.Id == userId)
             .Select(UserQueries.ProjectToDto())
             .FirstOrDefaultAsync();
 
