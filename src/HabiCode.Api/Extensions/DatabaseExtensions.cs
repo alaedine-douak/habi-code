@@ -12,7 +12,7 @@ public static class DatabaseExtensions
         using IServiceScope scope = app.Services.CreateScope();
         await using HabiCodeDbContext dbContext = 
             scope.ServiceProvider.GetRequiredService<HabiCodeDbContext>();
-        await using HabiCodeIdentityDbContext identotyDbContext = 
+        await using HabiCodeIdentityDbContext identityDbContext = 
             scope.ServiceProvider.GetRequiredService<HabiCodeIdentityDbContext>();
 
         try
@@ -21,7 +21,7 @@ public static class DatabaseExtensions
             app.Logger.LogInformation("HabiCode database migrations applied successfully.");
 
 
-            await identotyDbContext.Database.MigrateAsync();
+            await identityDbContext.Database.MigrateAsync();
             app.Logger.LogInformation("HabiCode Identity database migrations applied successfully.");
         }
         catch (Exception e)
